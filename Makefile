@@ -3,11 +3,11 @@ CFLAGS := -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude
 BIN_DIR := bin
 SHELL := D:/Git/bin/bash.exe
 
-.PHONY: all test test-item test-list test-undo clean
+.PHONY: all test test-item test-list test-undo test-storage clean
 
 all: test
 
-test: test-item test-list test-undo
+test: test-item test-list test-undo test-storage
 
 test-item: $(BIN_DIR)/test_item.exe
 	./$(BIN_DIR)/test_item.exe
@@ -18,6 +18,10 @@ test-list: $(BIN_DIR)/test_item_list.exe
 test-undo: $(BIN_DIR)/test_undo_stack.exe
 	./$(BIN_DIR)/test_undo_stack.exe
 
+test-storage: $(BIN_DIR)/test_storage.exe
+	mkdir -p tests/tmp
+	./$(BIN_DIR)/test_storage.exe
+
 $(BIN_DIR)/test_item.exe: tests/test_item.c src/item.c include/item.h tests/test.h | $(BIN_DIR)
 	$(CC) $(CFLAGS) tests/test_item.c src/item.c -o $@
 
@@ -27,8 +31,12 @@ $(BIN_DIR)/test_item_list.exe: tests/test_item_list.c src/item.c src/item_list.c
 $(BIN_DIR)/test_undo_stack.exe: tests/test_undo_stack.c src/item.c src/item_list.c src/undo_stack.c include/item.h include/item_list.h include/undo_stack.h tests/test.h | $(BIN_DIR)
 	$(CC) $(CFLAGS) tests/test_undo_stack.c src/item.c src/item_list.c src/undo_stack.c -o $@
 
+$(BIN_DIR)/test_storage.exe: tests/test_storage.c src/item.c src/item_list.c src/storage.c include/item.h include/item_list.h include/storage.h tests/test.h | $(BIN_DIR)
+	$(CC) $(CFLAGS) tests/test_storage.c src/item.c src/item_list.c src/storage.c -o $@
+
 $(BIN_DIR):
 	mkdir -p "$(BIN_DIR)"
 
 clean:
 	rm -rf "$(BIN_DIR)"
+	rm -rf tests/tmp
