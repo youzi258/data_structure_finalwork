@@ -1,5 +1,6 @@
 CC := D:/mingw/mingw64/bin/gcc.exe
-CFLAGS := -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude
+# 源文件统一保存为 UTF-8，中文字符串在编译后转换为 GBK，适配 Windows 控制台。
+CFLAGS := -std=c11 -Wall -Wextra -Werror -pedantic -finput-charset=UTF-8 -fexec-charset=GBK -Iinclude
 BIN_DIR := bin
 SHELL := D:/Git/bin/bash.exe
 MKDIR_P := mkdir -p

@@ -1,3 +1,6 @@
+/* 安全输入模块接口：封装整数、文本和确认输入的校验逻辑。
+ */
+
 #ifndef INPUT_H
 #define INPUT_H
 

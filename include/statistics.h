@@ -1,3 +1,6 @@
+/* 统计模块接口：按地点统计失物数量并维护有序统计链表。
+ */
+
 #ifndef STATISTICS_H
 #define STATISTICS_H
 

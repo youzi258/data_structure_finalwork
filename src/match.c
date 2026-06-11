@@ -1,3 +1,6 @@
+/* 智能匹配模块实现：按多维规则评分并生成有序匹配结果。
+ */
+
 #include "match.h"
 
 #include <ctype.h>
@@ -116,6 +119,7 @@ static void append_reason(char *reason, size_t reason_size, const char *text) {
     strncat(reason, text, remaining);
 }
 
+/* 匹配结果节点独立保存失物/拾物编号和原因文本，不复制原 Item。 */
 static MatchResult *match_result_new(
     int lost_id,
     int found_id,
@@ -173,6 +177,7 @@ int match_score_items(
 ) {
     int score = 0;
 
+    /* 100 分制评分：每个条件命中后累加分数，并同步记录可解释原因。 */
     if (reason != NULL && reason_size > 0) {
         reason[0] = '\0';
     }
@@ -182,44 +187,44 @@ int match_score_items(
     }
     if (strings_equal_case_insensitive(lost->category, found->category)) {
         score += 25;
-        append_reason(reason, reason_size, "category +25");
+        append_reason(reason, reason_size, "类别一致 +25");
     }
     if (texts_share_token(lost->name, found->name)) {
         score += 25;
-        append_reason(reason, reason_size, "name +25");
+        append_reason(reason, reason_size, "名称相似 +25");
     }
     if (lost->color[0] != '\0' &&
         strings_equal_case_insensitive(lost->color, found->color)) {
         score += 20;
-        append_reason(reason, reason_size, "color +20");
+        append_reason(reason, reason_size, "颜色一致 +20");
     }
     if (strings_equal_case_insensitive(lost->location, found->location) ||
         texts_share_token(lost->location, found->location)) {
         score += 15;
-        append_reason(reason, reason_size, "location +15");
+        append_reason(reason, reason_size, "地点相近 +15");
     }
     if (times_are_close(lost, found)) {
         score += 10;
-        append_reason(reason, reason_size, "time +10");
+        append_reason(reason, reason_size, "时间接近 +10");
     }
     if (texts_share_token(lost->keywords, found->keywords)) {
         score += 5;
-        append_reason(reason, reason_size, "keywords +5");
+        append_reason(reason, reason_size, "关键词命中 +5");
     }
     return score;
 }
 
 const char *match_level_to_string(int score) {
     if (score >= 80) {
-        return "High similarity";
+        return "高度疑似匹配";
     }
     if (score >= 60) {
-        return "Possible match";
+        return "可能匹配";
     }
     if (score >= 40) {
-        return "Low confidence";
+        return "低可信匹配";
     }
-    return "Hidden";
+    return "不显示";
 }
 
 int match_generate_results(
@@ -230,6 +235,7 @@ int match_generate_results(
 ) {
     const Item *lost;
 
+    /* 双重遍历失物和拾物链表，达到阈值的结果直接插入有序链表。 */
     if (lost_items == NULL || found_items == NULL || results == NULL) {
         return 0;
     }

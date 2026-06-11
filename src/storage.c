@@ -1,3 +1,6 @@
+/* CSV 存储模块实现：解析和写入物品记录，过滤无效或重复数据。
+ */
+
 #include "storage.h"
 
 #include <errno.h>
@@ -118,6 +121,7 @@ static int parse_item_row(char *line, Item *item) {
     return item_is_valid(item);
 }
 
+/* 保存前再次检查字段，防止写出当前简化 CSV 格式无法解析的数据。 */
 static int item_fields_are_writable(const Item *item) {
     if (!item_is_valid(item)) {
         return 0;
@@ -257,6 +261,7 @@ StorageResult storage_load_items(
     if (file == NULL) {
         return STORAGE_OPEN_FAILED;
     }
+    /* 先读入临时链表，全部处理完后再替换调用方列表，避免半加载状态。 */
     item_list_init(&loaded_lost, ITEM_LOST);
     item_list_init(&loaded_found, ITEM_FOUND);
 

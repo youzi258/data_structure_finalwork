@@ -1,3 +1,6 @@
+/* 物品模型测试：验证枚举转换、日期校验和记录有效性。
+ */
+
 #include "item.h"
 #include "test.h"
 

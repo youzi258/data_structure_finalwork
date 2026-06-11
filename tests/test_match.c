@@ -1,3 +1,6 @@
+/* 智能匹配测试：验证评分原因、等级文本和结果排序。
+ */
+
 #include "item_list.h"
 #include "match.h"
 #include "test.h"
@@ -37,13 +40,13 @@ static void test_scores_full_match_with_reasons(void) {
     score = match_score_items(&lost, &found, reason, sizeof(reason));
 
     ASSERT_EQ(100, score);
-    ASSERT_TRUE(strstr(reason, "category +25") != NULL);
-    ASSERT_TRUE(strstr(reason, "name +25") != NULL);
-    ASSERT_TRUE(strstr(reason, "color +20") != NULL);
-    ASSERT_TRUE(strstr(reason, "location +15") != NULL);
-    ASSERT_TRUE(strstr(reason, "time +10") != NULL);
-    ASSERT_TRUE(strstr(reason, "keywords +5") != NULL);
-    ASSERT_STR_EQ("High similarity", match_level_to_string(score));
+    ASSERT_TRUE(strstr(reason, "类别一致 +25") != NULL);
+    ASSERT_TRUE(strstr(reason, "名称相似 +25") != NULL);
+    ASSERT_TRUE(strstr(reason, "颜色一致 +20") != NULL);
+    ASSERT_TRUE(strstr(reason, "地点相近 +15") != NULL);
+    ASSERT_TRUE(strstr(reason, "时间接近 +10") != NULL);
+    ASSERT_TRUE(strstr(reason, "关键词命中 +5") != NULL);
+    ASSERT_STR_EQ("高度疑似匹配", match_level_to_string(score));
 }
 
 static void test_generates_thresholded_sorted_results(void) {

@@ -1,3 +1,6 @@
+/* 智能匹配模块接口：定义评分规则、匹配结果链表和结果生成函数。
+ */
+
 #ifndef MATCH_H
 #define MATCH_H
 

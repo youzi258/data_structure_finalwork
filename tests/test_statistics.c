@@ -1,3 +1,6 @@
+/* 地点统计测试：验证地点计数、降序排序和空链表处理。
+ */
+
 #include "item_list.h"
 #include "statistics.h"
 #include "test.h"

@@ -1,3 +1,6 @@
+/* 安全输入模块实现：所有控制台输入都先用 fgets 读取整行再校验。
+ */
+
 #include "input.h"
 
 #include <ctype.h>
@@ -90,13 +93,13 @@ int input_read_int(const char *prompt, int minimum, int maximum, int *value) {
         }
         if (strchr(buffer, '\n') == NULL && !feof(stdin)) {
             discard_line_remainder();
-            puts("Input is too long.");
+            puts("输入内容过长，请重新输入。");
             continue;
         }
         if (input_parse_int(buffer, minimum, maximum, value)) {
             return 1;
         }
-        printf("Enter an integer from %d to %d.\n", minimum, maximum);
+        printf("请输入 %d 到 %d 之间的整数。\n", minimum, maximum);
     }
 }
 
@@ -118,14 +121,14 @@ int input_read_text(
         }
         if (strchr(buffer, '\n') == NULL && !feof(stdin)) {
             discard_line_remainder();
-            puts("Input is too long.");
+            puts("输入内容过长，请重新输入。");
             continue;
         }
         if (input_copy_text(
                 buffer, destination, destination_size, allow_empty)) {
             return 1;
         }
-        puts("Invalid text. Do not use commas and keep it within the limit.");
+        puts("文本输入无效：请勿使用英文逗号，并确保长度不超过限制。");
     }
 }
 
@@ -147,6 +150,6 @@ int input_read_yes_no(const char *prompt, int *answer) {
             *answer = 0;
             return 1;
         }
-        puts("Enter y or n.");
+        puts("请输入 y 或 n。");
     }
 }
