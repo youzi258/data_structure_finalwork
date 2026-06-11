@@ -1,3 +1,6 @@
+/* 撤销栈模块实现：用栈保存新增/删除快照，支持一步撤销。
+ */
+
 #include "undo_stack.h"
 
 #include <stdlib.h>
@@ -25,6 +28,7 @@ static int undo_stack_push(
     return 1;
 }
 
+/* 根据备份记录的类型选择失物链表或拾物链表。 */
 static ItemList *target_list(
     ItemType type,
     ItemList *lost_items,

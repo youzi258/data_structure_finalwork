@@ -1,3 +1,6 @@
+/* 哈希索引测试：验证类别查询、关键词 token 查询和空索引行为。
+ */
+
 #include "hash_index.h"
 #include "item_list.h"
 #include "test.h"

@@ -1,3 +1,6 @@
+/* 物品数据模型实现：负责枚举转换、日期校验和记录合法性检查。
+ */
+
 #include "item.h"
 
 #include <string.h>

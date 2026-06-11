@@ -1,3 +1,6 @@
+/* 哈希索引模块接口：按类别或关键词建立链地址索引，加速精确查询。
+ */
+
 #ifndef HASH_INDEX_H
 #define HASH_INDEX_H
 

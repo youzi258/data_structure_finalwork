@@ -1,3 +1,6 @@
+/* 撤销栈测试：验证新增/删除撤销、空栈和容量边界。
+ */
+
 #include "undo_stack.h"
 #include "test.h"
 

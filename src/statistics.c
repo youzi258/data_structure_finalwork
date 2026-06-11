@@ -1,3 +1,6 @@
+/* 统计模块实现：统计失物高发地点并按数量降序输出。
+ */
+
 #include "statistics.h"
 
 #include <ctype.h>

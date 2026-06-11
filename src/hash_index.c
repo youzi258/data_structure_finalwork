@@ -1,3 +1,6 @@
+/* 哈希索引模块实现：使用链地址法把类别或关键词映射到物品节点。
+ */
+
 #include "hash_index.h"
 
 #include <ctype.h>
@@ -134,6 +137,7 @@ static int item_has_indexed_token(
     return 0;
 }
 
+/* 关键词字段按字母数字 token 拆分，同一记录的重复 token 不重复入桶。 */
 static int hash_index_insert_keywords(HashIndex *index, const Item *item) {
     const char *cursor = item->keywords;
 
@@ -188,6 +192,7 @@ int hash_index_build(HashIndex *index, const ItemList *items) {
     return 1;
 }
 
+/* 查询时只遍历目标桶内的冲突链，命中后通过回调输出原始记录。 */
 size_t hash_index_visit(
     const HashIndex *index,
     const char *key,

@@ -1,3 +1,6 @@
+/* 程序入口和控制台菜单：整合成员 A 基础功能与成员 B 扩展功能。
+ */
+
 #include "hash_index.h"
 #include "input.h"
 #include "item_list.h"
@@ -10,20 +13,50 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 typedef struct {
     ItemList lost_items;
     ItemList found_items;
     UndoStack undo_stack;
 } Application;
 
+static void configure_console_encoding(void) {
+#ifdef _WIN32
+    /* 中文界面使用 GBK 代码页，配合 Makefile 的 -fexec-charset=GBK。 */
+    SetConsoleCP(936);
+    SetConsoleOutputCP(936);
+#endif
+}
+
+/* CSV 中仍使用 LOST/FOUND 等英文枚举，界面显示时单独转换为中文。 */
+static const char *item_type_display(ItemType type) {
+    return type == ITEM_LOST ? "失物" : "拾物";
+}
+
+static const char *item_status_display(ItemStatus status) {
+    switch (status) {
+        case STATUS_UNPROCESSED:
+            return "未处理";
+        case STATUS_MATCHED:
+            return "已匹配";
+        case STATUS_COMPLETED:
+            return "已完成";
+        default:
+            return "未知";
+    }
+}
+
 static void print_item(const Item *item, void *context) {
     (void)context;
     printf(
-        "ID: %d | Type: %s | Name: %s | Category: %s | Color: %s\n"
-        "Location: %s | Keywords: %s | Contact: %s\n"
-        "Time: %04d-%02d-%02d %02d:%02d | Status: %s\n",
+        "编号：%d | 类型：%s | 名称：%s | 类别：%s | 颜色：%s\n"
+        "地点：%s | 关键词：%s | 联系方式：%s\n"
+        "时间：%04d-%02d-%02d %02d:%02d | 状态：%s\n",
         item->id,
-        item_type_to_string(item->type),
+        item_type_display(item->type),
         item->name,
         item->category,
         item->color,
@@ -35,7 +68,7 @@ static void print_item(const Item *item, void *context) {
         item->day,
         item->hour,
         item->minute,
-        item_status_to_string(item->status)
+        item_status_display(item->status)
     );
 }
 
@@ -44,7 +77,7 @@ static void print_list(const ItemList *list, const char *title) {
 
     printf("\n=== %s (%zu) ===\n", title, list->size);
     if (list->head == NULL) {
-        puts("No records.");
+        puts("暂无记录。");
         return;
     }
     current = list->head;
@@ -73,30 +106,31 @@ static const Item *find_item(const Application *app, int id) {
     return item_list_find_by_id_const(&app->found_items, id);
 }
 
+/* 失物和拾物共用同一套字段读取逻辑，避免两个录入流程重复。 */
 static int read_item_fields(Item *item, int include_status) {
     int status_choice;
 
-    if (!input_read_text("Name: ", item->name, sizeof(item->name), 0) ||
+    if (!input_read_text("名称：", item->name, sizeof(item->name), 0) ||
         !input_read_text(
-            "Category: ", item->category, sizeof(item->category), 0) ||
-        !input_read_text("Color (may be empty): ",
+            "类别：", item->category, sizeof(item->category), 0) ||
+        !input_read_text("颜色（可留空）：",
                          item->color, sizeof(item->color), 1) ||
         !input_read_text(
-            "Location: ", item->location, sizeof(item->location), 0) ||
-        !input_read_text("Keywords (may be empty): ",
+            "地点：", item->location, sizeof(item->location), 0) ||
+        !input_read_text("关键词（可留空）：",
                          item->keywords, sizeof(item->keywords), 1) ||
         !input_read_text(
-            "Contact: ", item->contact, sizeof(item->contact), 0) ||
-        !input_read_int("Year: ", 2000, 9999, &item->year) ||
-        !input_read_int("Month: ", 1, 12, &item->month) ||
-        !input_read_int("Day: ", 1, 31, &item->day) ||
-        !input_read_int("Hour: ", 0, 23, &item->hour) ||
-        !input_read_int("Minute: ", 0, 59, &item->minute)) {
+            "联系方式：", item->contact, sizeof(item->contact), 0) ||
+        !input_read_int("年份：", 2000, 9999, &item->year) ||
+        !input_read_int("月份：", 1, 12, &item->month) ||
+        !input_read_int("日期：", 1, 31, &item->day) ||
+        !input_read_int("小时：", 0, 23, &item->hour) ||
+        !input_read_int("分钟：", 0, 59, &item->minute)) {
         return 0;
     }
     if (include_status) {
-        puts("Status: 1 UNPROCESSED, 2 MATCHED, 3 COMPLETED");
-        if (!input_read_int("Status: ", 1, 3, &status_choice)) {
+        puts("状态：1 未处理，2 已匹配，3 已完成");
+        if (!input_read_int("请选择状态：", 1, 3, &status_choice)) {
             return 0;
         }
         item->status = (ItemStatus)(status_choice - 1);
@@ -104,7 +138,7 @@ static int read_item_fields(Item *item, int include_status) {
         item->status = STATUS_UNPROCESSED;
     }
     if (!item_is_valid(item)) {
-        puts("The item fields do not form a valid record.");
+        puts("物品字段不完整或日期时间无效。");
         return 0;
     }
     return 1;
@@ -117,11 +151,11 @@ static void add_item(Application *app, ItemType type) {
         : &app->found_items;
     ListResult result;
 
-    if (!input_read_int("ID: ", 1, INT_MAX, &item.id)) {
+    if (!input_read_int("编号：", 1, INT_MAX, &item.id)) {
         return;
     }
     if (find_item(app, item.id) != NULL) {
-        puts("That ID already exists.");
+        puts("该编号已经存在。");
         return;
     }
     item.type = type;
@@ -130,15 +164,16 @@ static void add_item(Application *app, ItemType type) {
     }
     result = item_list_append(list, &item);
     if (result != LIST_OK) {
-        puts("Could not add the item.");
+        puts("添加记录失败。");
         return;
     }
+    /* 数据写入成功后再压栈；压栈失败时回滚，保持数据和撤销栈一致。 */
     if (!undo_stack_push_add(&app->undo_stack, &item)) {
         item_list_remove(list, item.id, NULL);
-        puts("Could not record undo; the add was rolled back.");
+        puts("无法记录撤销操作，本次添加已回滚。");
         return;
     }
-    puts("Item added.");
+    puts("记录添加成功。");
 }
 
 static void update_item(Application *app) {
@@ -146,24 +181,24 @@ static void update_item(Application *app) {
     ItemList *list;
     Item replacement;
 
-    if (!input_read_int("ID to update: ", 1, INT_MAX, &id)) {
+    if (!input_read_int("请输入要修改的编号：", 1, INT_MAX, &id)) {
         return;
     }
     list = find_item_list(app, id);
     if (list == NULL) {
-        puts("Item not found.");
+        puts("未找到该记录。");
         return;
     }
     replacement = *item_list_find_by_id(list, id);
     replacement.next = NULL;
-    puts("Enter the replacement fields.");
+    puts("请输入修改后的字段：");
     if (!read_item_fields(&replacement, 1)) {
         return;
     }
     if (item_list_update(list, id, &replacement) == LIST_OK) {
-        puts("Item updated.");
+        puts("记录修改成功。");
     } else {
-        puts("Could not update the item.");
+        puts("记录修改失败。");
     }
 }
 
@@ -172,36 +207,36 @@ static void delete_item(Application *app) {
     ItemList *list;
     Item removed = {0};
 
-    if (!input_read_int("ID to delete: ", 1, INT_MAX, &id)) {
+    if (!input_read_int("请输入要删除的编号：", 1, INT_MAX, &id)) {
         return;
     }
     list = find_item_list(app, id);
     if (list == NULL) {
-        puts("Item not found.");
+        puts("未找到该记录。");
         return;
     }
     if (item_list_remove(list, id, &removed) != LIST_OK) {
-        puts("Could not delete the item.");
+        puts("记录删除失败。");
         return;
     }
     if (!undo_stack_push_delete(&app->undo_stack, &removed)) {
         item_list_append(list, &removed);
-        puts("Could not record undo; the delete was rolled back.");
+        puts("无法记录撤销操作，本次删除已回滚。");
         return;
     }
-    puts("Item deleted.");
+    puts("记录删除成功。");
 }
 
 static void find_item_by_id(const Application *app) {
     int id;
     const Item *item;
 
-    if (!input_read_int("ID to find: ", 1, INT_MAX, &id)) {
+    if (!input_read_int("请输入要查询的编号：", 1, INT_MAX, &id)) {
         return;
     }
     item = find_item(app, id);
     if (item == NULL) {
-        puts("Item not found.");
+        puts("未找到该记录。");
         return;
     }
     print_item(item, NULL);
@@ -213,9 +248,9 @@ static void search_items(const Application *app) {
     char query[ITEM_KEYWORDS_LENGTH];
     size_t count;
 
-    puts("Search field: 1 name, 2 category, 3 location, 4 keywords");
-    if (!input_read_int("Field: ", 1, 4, &choice) ||
-        !input_read_text("Query: ", query, sizeof(query), 0)) {
+    puts("查询字段：1 名称，2 类别，3 地点，4 关键词");
+    if (!input_read_int("请选择字段：", 1, 4, &choice) ||
+        !input_read_text("请输入查询内容：", query, sizeof(query), 0)) {
         return;
     }
     field = (ItemField)(choice - 1);
@@ -223,7 +258,7 @@ static void search_items(const Application *app) {
         &app->lost_items, field, query, print_item, NULL);
     count += item_list_visit_matching(
         &app->found_items, field, query, print_item, NULL);
-    printf("Matched records: %zu\n", count);
+    printf("匹配记录数：%zu\n", count);
 }
 
 static void undo_last_operation(Application *app) {
@@ -231,11 +266,11 @@ static void undo_last_operation(Application *app) {
         &app->undo_stack, &app->lost_items, &app->found_items);
 
     if (result == UNDO_OK) {
-        puts("Last add/delete operation undone.");
+        puts("已撤销最近一次新增或删除操作。");
     } else if (result == UNDO_EMPTY) {
-        puts("There is no operation to undo.");
+        puts("当前没有可撤销的操作。");
     } else {
-        puts("Could not undo the operation.");
+        puts("撤销操作失败。");
     }
 }
 
@@ -244,32 +279,32 @@ static void load_items(Application *app) {
     StorageReport report = {0};
     StorageResult result;
 
-    if (!input_read_text("CSV path: ", path, sizeof(path), 0)) {
+    if (!input_read_text("CSV 文件路径：", path, sizeof(path), 0)) {
         return;
     }
     result = storage_load_items(
         path, &app->lost_items, &app->found_items, &report);
     if (result != STORAGE_OK) {
-        puts("Could not load the CSV file.");
+        puts("无法加载 CSV 文件。");
         return;
     }
     undo_stack_clear(&app->undo_stack);
-    printf("Loaded %zu row(s); skipped %zu invalid row(s).\n",
+    printf("已加载 %zu 条记录；跳过 %zu 条无效记录。\n",
            report.loaded_rows, report.skipped_rows);
 }
 
 static int save_items(const Application *app) {
     char path[260];
 
-    if (!input_read_text("CSV path: ", path, sizeof(path), 0)) {
+    if (!input_read_text("CSV 文件路径：", path, sizeof(path), 0)) {
         return 0;
     }
     if (storage_save_items(path, &app->lost_items, &app->found_items)
         != STORAGE_OK) {
-        puts("Could not save the CSV file.");
+        puts("无法保存 CSV 文件。");
         return 0;
     }
-    puts("Items saved.");
+    puts("数据保存成功。");
     return 1;
 }
 
@@ -283,12 +318,12 @@ static void show_match_results(const Application *app) {
             &app->found_items,
             MATCH_MINIMUM_SCORE,
             &results)) {
-        puts("Could not generate match results.");
+        puts("无法生成智能匹配结果。");
         return;
     }
-    printf("\n=== Smart Match Results (%zu) ===\n", results.size);
+    printf("\n=== 智能匹配结果（%zu 条）===\n", results.size);
     if (results.head == NULL) {
-        puts("No match results reached the display threshold.");
+        puts("没有达到显示阈值的匹配结果。");
     }
     current = results.head;
     while (current != NULL) {
@@ -298,8 +333,8 @@ static void show_match_results(const Application *app) {
             &app->found_items, current->found_id);
 
         printf(
-            "Lost #%d%s%s <-> Found #%d%s%s | Score: %d | %s\n"
-            "Reason: %s\n",
+            "失物 #%d%s%s <-> 拾物 #%d%s%s | 得分：%d | %s\n"
+            "原因：%s\n",
             current->lost_id,
             lost == NULL ? "" : " ",
             lost == NULL ? "" : lost->name,
@@ -315,11 +350,12 @@ static void show_match_results(const Application *app) {
     match_result_list_clear(&results);
 }
 
+/* 成员 B 的功能只读取成员 A 的链表，不接管链表节点所有权。 */
 static const ItemList *select_item_list(const Application *app) {
     int choice;
 
-    puts("List: 1 lost items, 2 found items");
-    if (!input_read_int("List: ", 1, 2, &choice)) {
+    puts("请选择列表：1 失物，2 拾物");
+    if (!input_read_int("列表：", 1, 2, &choice)) {
         return NULL;
     }
     return choice == 1 ? &app->lost_items : &app->found_items;
@@ -334,20 +370,20 @@ static void hash_search_items(const Application *app, HashIndexMode mode) {
     if (list == NULL) {
         return;
     }
-    if (!input_read_text("Query: ", query, sizeof(query), 0)) {
+    if (!input_read_text("请输入查询内容：", query, sizeof(query), 0)) {
         return;
     }
     if (!hash_index_init(&index, 97, mode)) {
-        puts("Could not create hash index.");
+        puts("无法创建哈希索引。");
         return;
     }
     if (!hash_index_build(&index, list)) {
         hash_index_clear(&index);
-        puts("Could not build hash index.");
+        puts("无法构建哈希索引。");
         return;
     }
     matches = hash_index_visit(&index, query, print_item, NULL);
-    printf("Hash matched records: %zu\n", matches);
+    printf("哈希查询命中记录数：%zu\n", matches);
     hash_index_clear(&index);
 }
 
@@ -357,12 +393,12 @@ static void show_location_statistics(const Application *app) {
 
     location_stats_list_init(&stats);
     if (!location_stats_build(&app->lost_items, &stats)) {
-        puts("Could not build location statistics.");
+        puts("无法生成地点统计。");
         return;
     }
-    printf("\n=== Lost Item Location Statistics (%zu) ===\n", stats.size);
+    printf("\n=== 失物高发地点统计（%zu 个地点）===\n", stats.size);
     if (stats.head == NULL) {
-        puts("No lost item records.");
+        puts("暂无失物记录。");
     }
     current = stats.head;
     while (current != NULL) {
@@ -374,12 +410,12 @@ static void show_location_statistics(const Application *app) {
 
 static void show_member_b_menu(void) {
     puts(
-        "\n=== Member B Features ===\n"
-        "1  Generate smart match results\n"
-        "2  Hash search by category\n"
-        "3  Hash search by keyword\n"
-        "4  Show lost item location statistics\n"
-        "0  Back"
+        "\n=== 智能匹配与扩展功能 ===\n"
+        "1  生成智能匹配结果\n"
+        "2  按类别进行哈希查询\n"
+        "3  按关键词进行哈希查询\n"
+        "4  查看失物高发地点统计\n"
+        "0  返回主菜单"
     );
 }
 
@@ -390,7 +426,7 @@ static void member_b_menu(const Application *app) {
         int choice;
 
         show_member_b_menu();
-        if (!input_read_int("Choice: ", 0, 4, &choice)) {
+        if (!input_read_int("请选择：", 0, 4, &choice)) {
             break;
         }
         switch (choice) {
@@ -417,20 +453,20 @@ static void member_b_menu(const Application *app) {
 
 static void show_menu(void) {
     puts(
-        "\n=== Campus Lost And Found ===\n"
-        "1  Add lost item\n"
-        "2  Add found item\n"
-        "3  Show lost items\n"
-        "4  Show found items\n"
-        "5  Update item\n"
-        "6  Delete item\n"
-        "7  Find item by ID\n"
-        "8  Search items\n"
-        "9  Undo last add/delete\n"
-        "10 Load items from CSV\n"
-        "11 Save items to CSV\n"
-        "12 Member B feature menu\n"
-        "0  Exit"
+        "\n=== 校园失物招领智能匹配系统 ===\n"
+        "1  录入失物信息\n"
+        "2  录入拾物信息\n"
+        "3  查看失物列表\n"
+        "4  查看拾物列表\n"
+        "5  修改记录\n"
+        "6  删除记录\n"
+        "7  按编号查询\n"
+        "8  按字段查询\n"
+        "9  撤销最近一次新增或删除\n"
+        "10 从 CSV 文件加载数据\n"
+        "11 保存数据到 CSV 文件\n"
+        "12 智能匹配与扩展功能\n"
+        "0  退出系统"
     );
 }
 
@@ -445,10 +481,10 @@ static int handle_choice(Application *app, int choice) {
             add_item(app, ITEM_FOUND);
             break;
         case 3:
-            print_list(&app->lost_items, "Lost Items");
+            print_list(&app->lost_items, "失物列表");
             break;
         case 4:
-            print_list(&app->found_items, "Found Items");
+            print_list(&app->found_items, "拾物列表");
             break;
         case 5:
             update_item(app);
@@ -475,12 +511,12 @@ static int handle_choice(Application *app, int choice) {
             member_b_menu(app);
             break;
         case 0:
-            if (!input_read_yes_no("Save before exit? (y/n): ",
+            if (!input_read_yes_no("退出前是否保存？(y/n)：",
                                    &save_before_exit)) {
                 return 0;
             }
             if (save_before_exit && !save_items(app)) {
-                puts("Exit cancelled because save did not complete.");
+                puts("保存未完成，已取消退出。");
                 break;
             }
             return 0;
@@ -494,6 +530,7 @@ int main(void) {
     Application app;
     int running = 1;
 
+    configure_console_encoding();
     item_list_init(&app.lost_items, ITEM_LOST);
     item_list_init(&app.found_items, ITEM_FOUND);
     undo_stack_init(&app.undo_stack);
@@ -502,7 +539,7 @@ int main(void) {
         int choice;
 
         show_menu();
-        if (!input_read_int("Choice: ", 0, 12, &choice)) {
+        if (!input_read_int("请选择：", 0, 12, &choice)) {
             break;
         }
         running = handle_choice(&app, choice);
@@ -511,6 +548,6 @@ int main(void) {
     undo_stack_clear(&app.undo_stack);
     item_list_clear(&app.lost_items);
     item_list_clear(&app.found_items);
-    puts("Goodbye.");
+    puts("感谢使用，再见。");
     return 0;
 }

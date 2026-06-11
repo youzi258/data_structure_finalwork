@@ -1,3 +1,6 @@
+/* CSV 存储模块接口：负责记录的文件加载、保存和坏行统计。
+ */
+
 #ifndef STORAGE_H
 #define STORAGE_H
 

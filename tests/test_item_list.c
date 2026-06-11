@@ -1,3 +1,6 @@
+/* 物品链表测试：验证追加、查找、更新、删除和遍历逻辑。
+ */
+
 #include "item_list.h"
 #include "test.h"
 

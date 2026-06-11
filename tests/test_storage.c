@@ -1,3 +1,6 @@
+/* CSV 存储测试：验证加载、保存、坏行跳过和重复编号处理。
+ */
+
 #include "storage.h"
 #include "test.h"
 

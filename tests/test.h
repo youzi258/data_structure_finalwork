@@ -1,3 +1,6 @@
+/* 轻量级测试框架：提供 C 项目单元测试常用断言和汇总输出。
+ */
+
 #ifndef TEST_H
 #define TEST_H
 

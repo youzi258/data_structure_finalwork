@@ -1,3 +1,6 @@
+/* 物品链表模块接口：维护失物或拾物单链表的增删改查遍历操作。
+ */
+
 #ifndef ITEM_LIST_H
 #define ITEM_LIST_H
 

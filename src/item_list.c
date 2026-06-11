@@ -1,3 +1,6 @@
+/* 物品链表模块实现：用单链表保存同一类型的物品记录。
+ */
+
 #include "item_list.h"
 
 #include <ctype.h>
@@ -56,6 +59,7 @@ static const char *field_value(const Item *item, ItemField field) {
     }
 }
 
+/* 链表保存 Item 副本，调用者可安全复用自己的局部变量。 */
 void item_list_init(ItemList *list, ItemType accepted_type) {
     if (list == NULL) {
         return;

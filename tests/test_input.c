@@ -1,3 +1,6 @@
+/* 输入模块测试：验证整数解析、文本复制和非法输入过滤。
+ */
+
 #include "input.h"
 #include "test.h"
 

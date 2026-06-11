@@ -1,3 +1,6 @@
+/* 撤销栈模块接口：记录新增/删除操作并支持回退。
+ */
+
 #ifndef UNDO_STACK_H
 #define UNDO_STACK_H
 
