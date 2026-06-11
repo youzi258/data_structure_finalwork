@@ -1,9 +1,9 @@
-CC := D:/mingw64/bin/gcc.exe
+CC := D:/mingw/mingw64/bin/gcc.exe
 CFLAGS := -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude
 BIN_DIR := bin
-SHELL := C:/PROGRA~1/Git/bin/bash.exe
-MKDIR_P := C:/PROGRA~1/Git/usr/bin/mkdir.exe -p
-RM_RF := C:/PROGRA~1/Git/usr/bin/rm.exe -rf
+SHELL := D:/Git/bin/bash.exe
+MKDIR_P := mkdir -p
+RM_RF := rm -rf
 
 .PHONY: all app test test-item test-list test-undo test-storage test-input test-match test-hash test-statistics clean
 
