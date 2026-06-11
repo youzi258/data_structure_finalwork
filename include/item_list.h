@@ -46,4 +46,3 @@ size_t item_list_visit_matching(
 void item_list_clear(ItemList *list);
 
 #endif
-

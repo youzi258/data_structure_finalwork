@@ -39,4 +39,3 @@ UndoResult undo_stack_apply(
 void undo_stack_clear(UndoStack *stack);
 
 #endif
-

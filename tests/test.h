@@ -50,4 +50,3 @@ static int test_finish(void) {
 }
 
 #endif
-

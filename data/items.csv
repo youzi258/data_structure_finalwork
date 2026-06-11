@@ -9,4 +9,3 @@ id,type,name,category,color,location,keywords,contact,year,month,day,hour,minute
 8,FOUND,Black umbrella,Umbrella,Black,Canteen,rain umbrella,13800000008,2026,6,2,12,40,UNPROCESSED
 9,FOUND,White cup,Bottle,White,Teaching building A first floor,water bottle,13800000009,2026,6,3,10,5,UNPROCESSED
 10,FOUND,Bluetooth earphones,Electronics,Black,Playground stand,earphones case,13800000010,2026,6,3,18,50,UNPROCESSED
-

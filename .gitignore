@@ -2,4 +2,3 @@ bin/
 tests/tmp/
 *.exe
 *.o
-

@@ -44,4 +44,3 @@ int item_status_from_string(const char *text, ItemStatus *status);
 int item_is_valid(const Item *item);
 
 #endif
-

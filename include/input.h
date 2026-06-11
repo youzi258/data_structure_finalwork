@@ -20,4 +20,3 @@ int input_read_text(
 int input_read_yes_no(const char *prompt, int *answer);
 
 #endif
-

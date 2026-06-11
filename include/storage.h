@@ -37,4 +37,3 @@ StorageResult storage_load_items(
 );
 
 #endif
-
