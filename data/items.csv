@@ -1,0 +1,12 @@
+id,type,name,category,color,location,keywords,contact,year,month,day,hour,minute,status
+1,LOST,Campus card,Card,Blue,Library second floor,student card campus,13800000001,2026,6,1,14,30,UNPROCESSED
+2,LOST,Dorm key,Key,Silver,Dormitory gate,key dorm,13800000002,2026,6,2,8,20,UNPROCESSED
+3,LOST,Umbrella,Umbrella,Black,Canteen entrance,rain umbrella,13800000003,2026,6,2,12,10,UNPROCESSED
+4,LOST,Water bottle,Bottle,White,Teaching building A,bottle cup,13800000004,2026,6,3,9,45,UNPROCESSED
+5,LOST,Earphones,Electronics,Black,Playground,earbuds bluetooth,13800000005,2026,6,3,18,20,UNPROCESSED
+6,FOUND,Student card,Card,Blue,Library gate,campus card blue,13800000006,2026,6,1,15,10,UNPROCESSED
+7,FOUND,Silver key,Key,Silver,Dormitory lobby,dorm key,13800000007,2026,6,2,9,5,UNPROCESSED
+8,FOUND,Black umbrella,Umbrella,Black,Canteen,rain umbrella,13800000008,2026,6,2,12,40,UNPROCESSED
+9,FOUND,White cup,Bottle,White,Teaching building A first floor,water bottle,13800000009,2026,6,3,10,5,UNPROCESSED
+10,FOUND,Bluetooth earphones,Electronics,Black,Playground stand,earphones case,13800000010,2026,6,3,18,50,UNPROCESSED
+

@@ -1,6 +1,7 @@
 #include "storage.h"
 
 #include <errno.h>
+#include <ctype.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,6 +74,19 @@ static void trim_line_end(char *line) {
            (line[length - 1] == '\n' || line[length - 1] == '\r')) {
         line[--length] = '\0';
     }
+}
+
+static int is_blank_line(const char *line) {
+    if (line == NULL) {
+        return 1;
+    }
+    while (*line != '\0') {
+        if (!isspace((unsigned char)*line)) {
+            return 0;
+        }
+        line++;
+    }
+    return 1;
 }
 
 static int parse_item_row(char *line, Item *item) {
@@ -258,6 +272,10 @@ StorageResult storage_load_items(
             continue;
         }
         trim_line_end(line);
+        if (is_blank_line(line)) {
+            first_line = 0;
+            continue;
+        }
         if (first_line && strcmp(line, STORAGE_HEADER) == 0) {
             first_line = 0;
             continue;

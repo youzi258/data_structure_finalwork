@@ -511,3 +511,36 @@ id,type,name,category,color,location,keywords,contact,year,month,day,hour,minute
 - 匹配算法使用规则评分法，不使用机器学习。
 - 本文档只作为项目开发方案，不包含具体代码实现。
 
+## 16. 成员 A 当前开发说明
+
+成员 A 已先搭建基础 C 工程框架，负责公共数据结构、失物 / 拾物链表、增删改查、CSV 文件读写、撤销栈和基础菜单。成员 B 后续可通过 `include/item.h` 与 `include/item_list.h` 读取 `ItemList` 数据，继续实现智能匹配、哈希查询、匹配排序和地点统计。
+
+### 16.1 工具链约定
+
+本仓库使用 MinGW 工具链构建，不使用 SageMath 目录中的 C 编译器。
+
+```powershell
+& 'D:\mingw\mingw64\bin\mingw32-make.exe' test
+& 'D:\mingw\mingw64\bin\mingw32-make.exe' app
+.\bin\lost_found.exe
+```
+
+### 16.2 当前文件说明
+
+```text
+include/        公共头文件，供成员 A 和成员 B 共同使用
+src/            成员 A 已实现的基础模块与主菜单
+tests/          单元测试
+data/items.csv  小型演示数据，完整 30 条数据后续联调阶段补齐
+```
+
+### 16.3 已实现菜单功能
+
+- 新增失物 / 拾物记录
+- 查看失物 / 拾物列表
+- 修改、删除、按编号查询
+- 按名称、类别、地点、关键词线性查询
+- 撤销最近一次新增或删除
+- 从 CSV 加载、保存到 CSV
+- 成员 B 功能入口占位
+

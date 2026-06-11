@@ -6,6 +6,7 @@
 
 #define ROUND_TRIP_PATH "tests/tmp/round_trip.csv"
 #define MALFORMED_PATH "tests/tmp/malformed.csv"
+#define BLANK_LINES_PATH "tests/tmp/blank_lines.csv"
 #define EMPTY_PATH "tests/tmp/empty.csv"
 #define MISSING_PATH "tests/tmp/missing.csv"
 
@@ -141,9 +142,40 @@ static void test_empty_and_missing_files(void) {
     remove(EMPTY_PATH);
 }
 
+static void test_blank_lines_are_ignored(void) {
+    FILE *file = fopen(BLANK_LINES_PATH, "w");
+    ItemList lost_items;
+    ItemList found_items;
+    StorageReport report = {0};
+
+    ASSERT_TRUE(file != NULL);
+    if (file == NULL) {
+        return;
+    }
+    fputs(STORAGE_HEADER "\n", file);
+    fputs("\n", file);
+    fputs("  \n", file);
+    fputs("1,LOST,Campus card,Card,Blue,Library,campus,13800000001,"
+          "2026,6,1,14,30,UNPROCESSED\n", file);
+    fputs("\n", file);
+    fclose(file);
+
+    item_list_init(&lost_items, ITEM_LOST);
+    item_list_init(&found_items, ITEM_FOUND);
+    ASSERT_EQ(STORAGE_OK, storage_load_items(
+        BLANK_LINES_PATH, &lost_items, &found_items, &report));
+    ASSERT_EQ(1, report.loaded_rows);
+    ASSERT_EQ(0, report.skipped_rows);
+
+    item_list_clear(&lost_items);
+    item_list_clear(&found_items);
+    remove(BLANK_LINES_PATH);
+}
+
 int main(void) {
     test_save_and_load_round_trip();
     test_malformed_and_duplicate_rows_are_skipped();
     test_empty_and_missing_files();
+    test_blank_lines_are_ignored();
     return test_finish();
 }
