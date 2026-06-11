@@ -1,5 +1,8 @@
+#include "hash_index.h"
 #include "input.h"
 #include "item_list.h"
+#include "match.h"
+#include "statistics.h"
 #include "storage.h"
 #include "undo_stack.h"
 
@@ -270,6 +273,148 @@ static int save_items(const Application *app) {
     return 1;
 }
 
+static void show_match_results(const Application *app) {
+    MatchResultList results;
+    const MatchResult *current;
+
+    match_result_list_init(&results);
+    if (!match_generate_results(
+            &app->lost_items,
+            &app->found_items,
+            MATCH_MINIMUM_SCORE,
+            &results)) {
+        puts("Could not generate match results.");
+        return;
+    }
+    printf("\n=== Smart Match Results (%zu) ===\n", results.size);
+    if (results.head == NULL) {
+        puts("No match results reached the display threshold.");
+    }
+    current = results.head;
+    while (current != NULL) {
+        const Item *lost = item_list_find_by_id_const(
+            &app->lost_items, current->lost_id);
+        const Item *found = item_list_find_by_id_const(
+            &app->found_items, current->found_id);
+
+        printf(
+            "Lost #%d%s%s <-> Found #%d%s%s | Score: %d | %s\n"
+            "Reason: %s\n",
+            current->lost_id,
+            lost == NULL ? "" : " ",
+            lost == NULL ? "" : lost->name,
+            current->found_id,
+            found == NULL ? "" : " ",
+            found == NULL ? "" : found->name,
+            current->score,
+            match_level_to_string(current->score),
+            current->reason
+        );
+        current = current->next;
+    }
+    match_result_list_clear(&results);
+}
+
+static const ItemList *select_item_list(const Application *app) {
+    int choice;
+
+    puts("List: 1 lost items, 2 found items");
+    if (!input_read_int("List: ", 1, 2, &choice)) {
+        return NULL;
+    }
+    return choice == 1 ? &app->lost_items : &app->found_items;
+}
+
+static void hash_search_items(const Application *app, HashIndexMode mode) {
+    const ItemList *list = select_item_list(app);
+    HashIndex index;
+    char query[ITEM_KEYWORDS_LENGTH];
+    size_t matches;
+
+    if (list == NULL) {
+        return;
+    }
+    if (!input_read_text("Query: ", query, sizeof(query), 0)) {
+        return;
+    }
+    if (!hash_index_init(&index, 97, mode)) {
+        puts("Could not create hash index.");
+        return;
+    }
+    if (!hash_index_build(&index, list)) {
+        hash_index_clear(&index);
+        puts("Could not build hash index.");
+        return;
+    }
+    matches = hash_index_visit(&index, query, print_item, NULL);
+    printf("Hash matched records: %zu\n", matches);
+    hash_index_clear(&index);
+}
+
+static void show_location_statistics(const Application *app) {
+    LocationStatsList stats;
+    const LocationStat *current;
+
+    location_stats_list_init(&stats);
+    if (!location_stats_build(&app->lost_items, &stats)) {
+        puts("Could not build location statistics.");
+        return;
+    }
+    printf("\n=== Lost Item Location Statistics (%zu) ===\n", stats.size);
+    if (stats.head == NULL) {
+        puts("No lost item records.");
+    }
+    current = stats.head;
+    while (current != NULL) {
+        printf("%s: %zu\n", current->location, current->count);
+        current = current->next;
+    }
+    location_stats_list_clear(&stats);
+}
+
+static void show_member_b_menu(void) {
+    puts(
+        "\n=== Member B Features ===\n"
+        "1  Generate smart match results\n"
+        "2  Hash search by category\n"
+        "3  Hash search by keyword\n"
+        "4  Show lost item location statistics\n"
+        "0  Back"
+    );
+}
+
+static void member_b_menu(const Application *app) {
+    int running = 1;
+
+    while (running) {
+        int choice;
+
+        show_member_b_menu();
+        if (!input_read_int("Choice: ", 0, 4, &choice)) {
+            break;
+        }
+        switch (choice) {
+            case 1:
+                show_match_results(app);
+                break;
+            case 2:
+                hash_search_items(app, HASH_INDEX_CATEGORY);
+                break;
+            case 3:
+                hash_search_items(app, HASH_INDEX_KEYWORDS);
+                break;
+            case 4:
+                show_location_statistics(app);
+                break;
+            case 0:
+                running = 0;
+                break;
+            default:
+                break;
+        }
+    }
+}
+
 static void show_menu(void) {
     puts(
         "\n=== Campus Lost And Found ===\n"
@@ -327,7 +472,7 @@ static int handle_choice(Application *app, int choice) {
             save_items(app);
             break;
         case 12:
-            puts("Member B features are not connected yet.");
+            member_b_menu(app);
             break;
         case 0:
             if (!input_read_yes_no("Save before exit? (y/n): ",
